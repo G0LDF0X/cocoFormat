@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>코코포맷 CocoFormat</title>
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body>
+    <header class="header">
+      <h1>코코포맷 <span class="brand-en">CocoFormat</span></h1>
+      <p class="subtitle">
+        ccfolia 로그를 변환합니다. 모든 처리는 브라우저에서만 이루어집니다.
+      </p>
+    </header>
+
+    <main class="main">
+      <section class="card" id="step-upload">
+        <h2>HTML 업로드</h2>
+        <div class="file-drop" id="file-drop" role="button" tabindex="0">
+          <input
+            type="file"
+            id="file-input"
+            accept=".html,.htm,text/html"
+            hidden
+          />
+          <span class="file-drop-text"
+            >ccfolia 로그 HTML을 여기에 드래그하거나 클릭하여 선택</span
+          >
+        </div>
+        <p class="file-info" id="file-info" hidden></p>
+      </section>
+
+      <div id="workspace" class="workspace" hidden>
+        <section class="card preview-panel" id="step-preview">
+          <div class="preview-panel-head">
+            <h2>미리보기</h2>
+            <button type="button" class="btn btn-primary" id="btn-download">
+              HTML 다운로드
+            </button>
+          </div>
+          <p class="hint">
+            본문 클릭으로 오탈자 수정. 프로필 클릭으로 해당 메시지의 이미지만
+            변경할 수 있습니다.
+          </p>
+          <p class="status" id="status"></p>
+          <div class="preview-wrap preview-wrap--large">
+            <iframe
+              id="preview-frame"
+              title="변환 결과 미리보기"
+              sandbox="allow-same-origin"
+            ></iframe>
+          </div>
+        </section>
+
+        <div class="settings-panel">
+          <section class="card" id="step-tabs">
+            <div class="card-title-row">
+              <h2>탭 · 글자 · 시스템</h2>
+              <div class="style-io-actions">
+                <button type="button" class="btn" id="btn-style-export">
+                  스타일 JSON 내보내기
+                </button>
+                <button type="button" class="btn" id="btn-style-import">
+                  스타일 JSON 불러오기
+                </button>
+                <input
+                  type="file"
+                  id="style-json-input"
+                  accept=".json,application/json"
+                  hidden
+                />
+              </div>
+            </div>
+            <label class="tab-divider-toggle">
+              <input type="checkbox" id="tab-divider-transparent" />
+              탭 칩 숨기기
+            </label>
+            <fieldset class="common-style-fieldset">
+              <legend>공통</legend>
+              <div class="grid-3">
+                <label>
+                  폰트 크기 (px)
+                  <input
+                    type="number"
+                    id="log-font-size"
+                    value="15"
+                    min="10"
+                    max="24"
+                    step="1"
+                  />
+                </label>
+                <label>
+                  줄 간격
+                  <input
+                    type="number"
+                    id="log-line-height"
+                    value="1.6"
+                    min="1"
+                    max="3"
+                    step="0.1"
+                  />
+                </label>
+                <label>
+                  메시지 여백 (px)
+                  <input
+                    type="number"
+                    id="log-message-padding"
+                    value="20"
+                    min="0"
+                    max="40"
+                    step="1"
+                  />
+                </label>
+              </div>
+            </fieldset>
+            <div class="tab-settings">
+              <fieldset>
+                <legend>잡담 (other)</legend>
+                <label
+                  >탭 이름 <input type="text" id="tab-other-title" value="잡담"
+                /></label>
+                <label
+                  >배경색 <input type="color" id="tab-other-bg" value="#27262C"
+                /></label>
+                <label
+                  >글자색
+                  <input type="color" id="tab-other-text" value="#a1a1a1"
+                /></label>
+                <label
+                  >칩 색
+                  <input type="color" id="tab-other-label" value="#8e8c9a"
+                /></label>
+              </fieldset>
+              <fieldset>
+                <legend>메인 (main)</legend>
+                <label
+                  >탭 이름 <input type="text" id="tab-main-title" value="메인"
+                /></label>
+                <label
+                  >배경색 <input type="color" id="tab-main-bg" value="#1f1e22"
+                /></label>
+                <label
+                  >글자색
+                  <input type="color" id="tab-main-text" value="#ffffff"
+                /></label>
+                <label
+                  >칩 색
+                  <input type="color" id="tab-main-label" value="#b0aebc"
+                /></label>
+              </fieldset>
+              <fieldset class="system-fieldset">
+                <legend>시스템 메시지</legend>
+                <label
+                  >칩 표기 <input type="text" id="system-label" value="system"
+                /></label>
+                <label
+                  >배경색 <input type="color" id="system-bg" value="#1f1e22"
+                /></label>
+                <label
+                  >글자색 <input type="color" id="system-text" value="#8a8898"
+                /></label>
+                <label
+                  >칩 색 <input type="color" id="system-border" value="#5a5870"
+                /></label>
+              </fieldset>
+            </div>
+
+            <div
+              id="custom-tabs-container"
+              class="custom-tabs-container"
+              hidden
+            ></div>
+          </section>
+
+          <section class="card" id="step-speakers">
+            <div class="card-title-row">
+              <h2>화자 설정</h2>
+              <div class="style-io-actions">
+                <button type="button" class="btn" id="btn-speaker-export">
+                  화자 JSON 내보내기
+                </button>
+                <button type="button" class="btn" id="btn-speaker-import">
+                  화자 JSON 불러오기
+                </button>
+                <input
+                  type="file"
+                  id="speaker-json-input"
+                  accept=".json,application/json"
+                  hidden
+                />
+              </div>
+            </div>
+            <p class="hint">
+              동일 이름은 한 인물로 취합됩니다. 나레이터는 중앙 정렬.
+            </p>
+            <div class="table-wrap">
+              <table class="speaker-table" id="speaker-table">
+                <thead>
+                  <tr>
+                    <th>프로필 · 원본</th>
+                    <th>표시 이름</th>
+                    <th>색상</th>
+                    <th>나레이터</th>
+                  </tr>
+                </thead>
+                <tbody id="speaker-tbody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <dialog class="image-dialog" id="image-dialog">
+      <form method="dialog" class="image-dialog-form" id="image-dialog-form">
+        <h3 id="image-dialog-title">프로필 이미지 URL</h3>
+        <p class="dialog-hint" id="image-dialog-hint" hidden></p>
+        <input type="url" id="image-dialog-url" placeholder="https://..." />
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="image-dialog-clear">
+            이미지 제거
+          </button>
+          <button type="submit" class="btn btn-primary">적용</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="overlay" id="overlay" hidden>
+      <div class="overlay-panel">
+        <div class="spinner"></div>
+        <p id="overlay-text">처리 중...</p>
+        <div class="progress-track" id="progress-track" hidden>
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <p class="progress-percent" id="progress-percent" hidden></p>
+      </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
