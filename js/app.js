@@ -96,6 +96,12 @@ function parseMessagePadding() {
   return Math.min(40, Math.max(0, n));
 }
 
+function parseAvatarSize() {
+  const n = parseInt($('log-avatar-size').value, 10);
+  if (!Number.isFinite(n)) return DEFAULT_STYLE_SETTINGS.tabs.avatarSize;
+  return Math.min(96, Math.max(24, n));
+}
+
 function getStyleSettings() {
   return {
     tabs: {
@@ -110,6 +116,7 @@ function getStyleSettings() {
       fontSize: parseFontSize(),
       lineHeight: parseLineHeight(),
       messagePaddingY: parseMessagePadding(),
+      avatarSize: parseAvatarSize(),
       tabDividerTransparent: $('tab-divider-transparent').checked,
     },
     customTabs: { ...customTabConfigs },
@@ -456,6 +463,7 @@ function normalizeStylePayload(raw) {
       fontSize: Number.isFinite(Number(tabs.fontSize)) ? Number(tabs.fontSize) : fallback.tabs.fontSize,
       lineHeight: Number.isFinite(Number(tabs.lineHeight)) ? Number(tabs.lineHeight) : fallback.tabs.lineHeight,
       messagePaddingY: Number.isFinite(Number(tabs.messagePaddingY)) ? Number(tabs.messagePaddingY) : fallback.tabs.messagePaddingY,
+      avatarSize: Number.isFinite(Number(tabs.avatarSize)) ? Number(tabs.avatarSize) : fallback.tabs.avatarSize,
       tabDividerTransparent: Boolean(tabs.tabDividerTransparent),
     },
     customTabs: normalizedCustomTabs,
@@ -477,6 +485,7 @@ function applyStyleSettings(style) {
   $('log-font-size').value = String(t.fontSize);
   $('log-line-height').value = String(t.lineHeight);
   $('log-message-padding').value = String(t.messagePaddingY);
+  $('log-avatar-size').value = String(t.avatarSize);
   $('tab-other-title').value = t.otherTitle;
   $('tab-main-title').value = t.mainTitle;
   $('tab-other-bg').value = t.otherBg;
@@ -676,6 +685,7 @@ const settingIds = [
   'log-font-size',
   'log-line-height',
   'log-message-padding',
+  'log-avatar-size',
   'tab-other-title', 'tab-main-title',
   'tab-other-bg', 'tab-main-bg',
   'tab-other-text', 'tab-main-text',

@@ -35,6 +35,7 @@ export const DEFAULT_STYLE_SETTINGS = {
     fontSize: 15,
     lineHeight: 1.6,
     messagePaddingY: 14,
+    avatarSize: 40,
     tabDividerTransparent: false,
   },
   customTabs: {},
@@ -98,17 +99,17 @@ const BASE_CSS = `    html, body { padding: 0; margin: 0; }
 
     #cclog_ccf .ccl_inWrap .ccl_infoWrap .ccl_imgWrap {
       overflow: hidden;
-      width: 40px;
-      height: 40px;
+      width: var(--ccl-avatar-size, 40px);
+      height: var(--ccl-avatar-size, 40px);
       background-color: rgba(0, 0, 0, 0.25);
-      border-radius: 50%;
+      border-radius: 6px;
       cursor: pointer;
       flex-shrink: 0;
     }
 
     #cclog_ccf .ccl_inWrap .ccl_infoWrap .ccl_imgWrap img {
-      width: 40px;
-      height: 40px;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
       display: block;
     }
@@ -243,8 +244,12 @@ function buildDynamicCss(style) {
   const fontSize = clampFontSize(t.fontSize);
   const lineHeight = clampLineHeight(t.lineHeight);
   const messagePaddingY = clampMessagePadding(t.messagePaddingY);
+  const avatarSize = clampAvatarSize(t.avatarSize);
   let css = `
-    #cclog_ccf .ccl_inWrap { font-size: ${fontSize}px; }
+    #cclog_ccf .ccl_inWrap {
+      font-size: ${fontSize}px;
+      --ccl-avatar-size: ${avatarSize}px;
+    }
     #cclog_ccf .ccl_inWrap .ccl_textWrap { line-height: ${lineHeight}; }
     #cclog_ccf .ccl_inWrap .ccl_player.system .ccl_Utext { line-height: ${lineHeight}; }
     #cclog_ccf .ccl_inWrap .ccl_player {
@@ -291,6 +296,12 @@ function clampMessagePadding(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return DEFAULT_STYLE_SETTINGS.tabs.messagePaddingY;
   return Math.min(40, Math.max(0, Math.round(n)));
+}
+
+function clampAvatarSize(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_STYLE_SETTINGS.tabs.avatarSize;
+  return Math.min(96, Math.max(24, Math.round(n)));
 }
 
 function tabCssClass(tab) {
