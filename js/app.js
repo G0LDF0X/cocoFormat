@@ -380,6 +380,34 @@ async function runConvert() {
 }
 
 function updatePreview() {
+  const currentDoc = previewFrame.contentDocument;
+  const currentWrap = currentDoc?.getElementById('cclog_ccf');
+  const currentStyle = currentDoc?.querySelector('style');
+
+  // 이미 로드된 문서가 있으면 iframe 재로드 대신 내용만 교체해 스크롤 점프를 줄인다.
+  if (currentDoc && currentWrap && currentStyle) {
+    const parser = new DOMParser();
+    const nextDoc = parser.parseFromString(outputHtml, 'text/html');
+    const nextWrap = nextDoc.getElementById('cclog_ccf');
+    const nextStyle = nextDoc.querySelector('style');
+    if (nextWrap && nextStyle) {
+      const scrollEl = currentDoc.scrollingElement || currentDoc.documentElement;
+      const x = scrollEl?.scrollLeft ?? 0;
+      const y = scrollEl?.scrollTop ?? 0;
+
+      currentStyle.textContent = nextStyle.textContent || '';
+      currentWrap.innerHTML = nextWrap.innerHTML;
+
+      requestAnimationFrame(() => {
+        if (!scrollEl) return;
+        scrollEl.scrollLeft = x;
+        scrollEl.scrollTop = y;
+      });
+      setupPreviewInteractions();
+      return;
+    }
+  }
+
   previewFrame.onload = () => setupPreviewInteractions();
   previewFrame.srcdoc = outputHtml;
 }
