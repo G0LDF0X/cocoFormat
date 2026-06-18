@@ -13,6 +13,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font-family:
@@ -69,6 +73,42 @@ body {
   gap: 1rem;
 }
 
+.mode-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mode-tab {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.mode-tab:hover {
+  color: var(--text);
+  border-color: rgba(124, 108, 240, 0.45);
+}
+
+.mode-tab.is-active {
+  color: #fff;
+  background: rgba(124, 108, 240, 0.22);
+  border-color: rgba(124, 108, 240, 0.75);
+}
+
+.mode-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
@@ -106,6 +146,99 @@ body {
   margin: 0 0 0.75rem;
 }
 
+.workspace--cut {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr);
+}
+
+.cut-source-panel {
+  min-height: calc(100vh - 12rem);
+}
+
+.cut-source-panel .line-preview {
+  flex: 1;
+  min-height: 0;
+}
+
+.cut-result-panel {
+  max-height: none;
+  overflow: visible;
+  padding-right: 1.5rem;
+}
+
+.cut-range-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto auto;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.cut-range-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.cut-range-controls .btn {
+  height: 38px;
+  white-space: nowrap;
+}
+
+.cut-result-preview-wrap {
+  margin: 0.5rem 0 0.75rem;
+}
+
+.cut-result-preview-wrap h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.line-preview {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #15151a;
+  overflow: auto;
+  min-height: 280px;
+  max-height: min(66vh, 720px);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.78rem;
+}
+
+.line-preview--result {
+  max-height: 220px;
+}
+
+.line-preview-line {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+}
+
+.line-preview-num {
+  color: #86829a;
+  padding: 0.12rem 0.6rem;
+  text-align: right;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  user-select: none;
+}
+
+.line-preview-content {
+  margin: 0;
+  padding: 0.12rem 0.65rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.line-preview-empty {
+  margin: 0;
+  padding: 0.9rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .settings-panel {
   display: flex;
   flex-direction: column;
@@ -125,6 +258,10 @@ body {
 
 @media (max-width: 1024px) {
   .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace--cut {
     grid-template-columns: 1fr;
   }
 
@@ -151,10 +288,22 @@ body {
     width: 100%;
     justify-content: flex-start;
   }
+
+  .cut-range-controls {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 640px) {
   .settings-panel .tab-settings.grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .mode-tabs {
+    flex-direction: column;
+  }
+
+  .cut-range-controls {
     grid-template-columns: 1fr;
   }
 }

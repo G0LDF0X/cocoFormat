@@ -23,6 +23,13 @@ let sourceFileName = 'log';
 let convertGeneration = 0;
 let imageDialogTarget = null;
 let isHandlingFile = false;
+let currentMode = 'edit';
+
+/** @type {import('./parser.js').CcfoliaMessage[]} */
+let cutSourceMessages = [];
+let cutSourceFileName = 'log';
+let cutSourceHtml = '';
+let cutExtractedHtml = '';
 
 /** @type {Map<string, string>} */
 let textOverrides = new Map();
@@ -47,6 +54,22 @@ const imageDialogUrl = $('image-dialog-url');
 const customTabsContainer = $('custom-tabs-container');
 const styleJsonInput = $('style-json-input');
 const speakerJsonInput = $('speaker-json-input');
+const modePanels = {
+  cut: $('mode-cut'),
+  edit: $('mode-edit'),
+};
+const modeTabs = Array.from(document.querySelectorAll('.mode-tab'));
+const cutFileInput = $('cut-file-input');
+const cutFileDrop = $('cut-file-drop');
+const cutFileInfo = $('cut-file-info');
+const cutWorkspace = $('cut-workspace');
+const cutSourcePreview = $('cut-source-preview');
+const cutResultPreview = $('cut-result-preview');
+const cutStartLineInput = $('cut-start-line');
+const cutEndLineInput = $('cut-end-line');
+const cutStatus = $('cut-status');
+const btnCutApply = $('btn-cut-apply');
+const btnCutDownload = $('btn-cut-download');
 
 let debounceTimer = null;
 
@@ -76,6 +99,210 @@ function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function normalizeMode(mode) {
+  if (mode in modePanels) return mode;
+  return 'edit';
+}
+
+function modeFromHash() {
+  const raw = window.location.hash.replace(/^#/, '').trim().toLowerCase();
+  return normalizeMode(raw);
+}
+
+function setMode(mode, options = {}) {
+  const { updateUrl = true, replace = false } = options;
+  const normalizedMode = normalizeMode(mode);
+  if (!(normalizedMode in modePanels)) return;
+  currentMode = normalizedMode;
+
+  if (updateUrl) {
+    const nextHash = `#${normalizedMode}`;
+    if (window.location.hash !== nextHash) {
+      const method = replace ? 'replaceState' : 'pushState';
+      window.history[method](null, '', nextHash);
+    }
+  }
+
+  for (const [key, panel] of Object.entries(modePanels)) {
+    if (!panel) continue;
+    panel.hidden = key !== normalizedMode;
+  }
+
+  for (const tab of modeTabs) {
+    const selected = tab.dataset.mode === normalizedMode;
+    tab.classList.toggle('is-active', selected);
+    tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+  }
+}
+
+function initFileDrop(dropEl, inputEl, onFile) {
+  if (!dropEl || !inputEl) return;
+
+  inputEl.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) onFile(file);
+  });
+
+  dropEl.addEventListener('click', () => inputEl.click());
+  dropEl.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    inputEl.click();
+  });
+
+  dropEl.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropEl.classList.add('dragover');
+  });
+
+  dropEl.addEventListener('dragleave', () => dropEl.classList.remove('dragover'));
+  dropEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropEl.classList.remove('dragover');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) onFile(file);
+  });
+}
+
+function renderLinePreview(container, lines, startLine = 1) {
+  if (!container) return;
+  if (!lines.length) {
+    container.innerHTML = '<p class="line-preview-empty">미리보기할 내용이 없습니다.</p>';
+    return;
+  }
+
+  container.innerHTML = lines
+    .map((line, idx) => {
+      const lineNumber = startLine + idx;
+      const shown = line.length > 1000 ? `${line.slice(0, 1000)} ...` : line;
+      return `<div class="line-preview-line">
+        <span class="line-preview-num">${lineNumber.toLocaleString()}</span>
+        <pre class="line-preview-content">${escapeHtml(shown) || '&nbsp;'}</pre>
+      </div>`;
+    })
+    .join('');
+}
+
+function messageToPreviewText(message) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${message.text}</div>`, 'text/html');
+  const text = (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
+  const safeText = text || '(빈 메시지)';
+  return `[${message.tab}] ${message.name}: ${safeText}`;
+}
+
+function isCcfoliaMessageParagraph(p) {
+  const spans = p.querySelectorAll(':scope > span');
+  if (spans.length < 3) return false;
+  const tabRaw = spans[0].textContent?.trim() || '';
+  const tab = tabRaw.replace(/^\[|\]$/g, '').trim().toLowerCase();
+  const name = spans[1].textContent?.replace(/:\s*$/, '').trim() || '';
+  return Boolean(tab && name);
+}
+
+function extractOriginalHtmlByMessageRange(rawHtml, start, end) {
+  const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
+  if (!doc.body) return rawHtml;
+
+  let messageIndex = 0;
+  for (const p of doc.body.querySelectorAll('p')) {
+    if (!isCcfoliaMessageParagraph(p)) continue;
+    messageIndex += 1;
+    if (messageIndex < start || messageIndex > end) p.remove();
+  }
+
+  return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
+}
+
+function resetCutWorkspace() {
+  cutSourceMessages = [];
+  cutSourceHtml = '';
+  cutExtractedHtml = '';
+  if (cutWorkspace) cutWorkspace.hidden = true;
+  if (cutFileInfo) {
+    cutFileInfo.hidden = true;
+    cutFileInfo.textContent = '';
+  }
+  if (cutStartLineInput) cutStartLineInput.value = '';
+  if (cutEndLineInput) cutEndLineInput.value = '';
+  if (cutStatus) cutStatus.textContent = '';
+  renderLinePreview(cutSourcePreview, []);
+  renderLinePreview(cutResultPreview, []);
+  if (btnCutDownload) btnCutDownload.disabled = true;
+}
+
+async function handleCutFile(file) {
+  if (!file) return;
+  const html = await file.text();
+  cutSourceHtml = html;
+  const parsedMessages = parseCcfoliaHtml(html);
+  if (parsedMessages.length === 0) {
+    throw new Error('메시지를 찾을 수 없습니다. ccfolia 로그 HTML인지 확인해 주세요.');
+  }
+
+  cutSourceFileName = file.name.replace(/\.html?$/i, '');
+  cutSourceMessages = parsedMessages;
+  cutExtractedHtml = '';
+
+  if (cutWorkspace) cutWorkspace.hidden = false;
+  if (cutFileInfo) {
+    cutFileInfo.hidden = false;
+    cutFileInfo.textContent = `${file.name} · ${formatBytes(file.size)} · 총 ${cutSourceMessages.length.toLocaleString()}메시지`;
+  }
+  if (cutStartLineInput) cutStartLineInput.value = '1';
+  if (cutEndLineInput) cutEndLineInput.value = String(cutSourceMessages.length);
+  if (cutStatus) cutStatus.textContent = '시작/종료 메시지 번호를 입력하고 "메시지 추출"을 눌러주세요.';
+  if (btnCutDownload) btnCutDownload.disabled = true;
+
+  renderLinePreview(cutSourcePreview, cutSourceMessages.map(messageToPreviewText), 1);
+  renderLinePreview(cutResultPreview, []);
+}
+
+async function applyCutRange() {
+  if (cutSourceMessages.length === 0) {
+    alert('먼저 HTML 파일을 업로드해 주세요.');
+    return;
+  }
+
+  const start = Number.parseInt(cutStartLineInput?.value ?? '', 10);
+  const end = Number.parseInt(cutEndLineInput?.value ?? '', 10);
+  const total = cutSourceMessages.length;
+
+  if (!Number.isFinite(start) || !Number.isFinite(end)) {
+    alert('시작/종료 메시지 번호를 숫자로 입력해 주세요.');
+    return;
+  }
+  if (start < 1 || end < 1 || start > total || end > total) {
+    alert(`메시지 번호는 1 ~ ${total.toLocaleString()} 범위로 입력해 주세요.`);
+    return;
+  }
+  if (start > end) {
+    alert('시작 번호는 종료 번호보다 작거나 같아야 합니다.');
+    return;
+  }
+
+  const extractedMessages = cutSourceMessages.slice(start - 1, end);
+  cutExtractedHtml = extractOriginalHtmlByMessageRange(cutSourceHtml, start, end);
+
+  renderLinePreview(cutResultPreview, extractedMessages.map(messageToPreviewText), start);
+  if (cutStatus) {
+    cutStatus.textContent = `${start.toLocaleString()}~${end.toLocaleString()}번 메시지 추출 완료 · 원본 디자인 유지 HTML 생성`;
+  }
+  if (btnCutDownload) btnCutDownload.disabled = extractedMessages.length === 0;
+}
+
+function downloadCutResult() {
+  if (!cutExtractedHtml) return;
+
+  const blob = new Blob([cutExtractedHtml], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `[CocoFormat-cut]${cutSourceFileName}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function parseFontSize() {
@@ -345,6 +572,50 @@ function scheduleConvert() {
   debounceTimer = setTimeout(() => runConvert(), 400);
 }
 
+function capturePreviewAnchor(doc, scrollEl) {
+  if (!doc || !scrollEl) return null;
+  const blocks = Array.from(doc.querySelectorAll('[data-edit-id]'));
+  if (blocks.length === 0) return null;
+
+  let anchorEl = null;
+  for (const block of blocks) {
+    const rect = block.getBoundingClientRect();
+    if (rect.bottom > 0) {
+      anchorEl = block;
+      break;
+    }
+  }
+  if (!anchorEl) anchorEl = blocks[blocks.length - 1];
+  if (!anchorEl) return null;
+
+  const rect = anchorEl.getBoundingClientRect();
+  const anchorId = anchorEl.getAttribute('data-edit-id');
+  if (!anchorId) return null;
+  const anchorTop = scrollEl.scrollTop + rect.top;
+
+  return {
+    id: anchorId,
+    offsetX: scrollEl.scrollLeft,
+    offsetYWithin: scrollEl.scrollTop - anchorTop,
+    fallbackY: scrollEl.scrollTop,
+  };
+}
+
+function restorePreviewAnchor(doc, scrollEl, anchor) {
+  if (!doc || !scrollEl || !anchor) return;
+  const target = Array.from(doc.querySelectorAll('[data-edit-id]')).find(
+    (el) => el.getAttribute('data-edit-id') === anchor.id,
+  );
+  scrollEl.scrollLeft = anchor.offsetX ?? 0;
+  if (!target) {
+    scrollEl.scrollTop = anchor.fallbackY ?? 0;
+    return;
+  }
+  const rect = target.getBoundingClientRect();
+  const top = scrollEl.scrollTop + rect.top;
+  scrollEl.scrollTop = top + (anchor.offsetYWithin ?? 0);
+}
+
 async function runConvert() {
   if (messages.length === 0) return;
 
@@ -392,16 +663,13 @@ function updatePreview() {
     const nextStyle = nextDoc.querySelector('style');
     if (nextWrap && nextStyle) {
       const scrollEl = currentDoc.scrollingElement || currentDoc.documentElement;
-      const x = scrollEl?.scrollLeft ?? 0;
-      const y = scrollEl?.scrollTop ?? 0;
+      const anchor = capturePreviewAnchor(currentDoc, scrollEl);
 
       currentStyle.textContent = nextStyle.textContent || '';
       currentWrap.innerHTML = nextWrap.innerHTML;
 
       requestAnimationFrame(() => {
-        if (!scrollEl) return;
-        scrollEl.scrollLeft = x;
-        scrollEl.scrollTop = y;
+        restorePreviewAnchor(currentDoc, scrollEl, anchor);
       });
       setupPreviewInteractions();
       return;
@@ -622,39 +890,45 @@ function escapeAttr(str) {
   return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
-fileInput.addEventListener('change', (e) => {
-  const file = e.target.files?.[0];
-  if (file) handleFile(file);
-});
-
-fileDrop.addEventListener('click', () => fileInput.click());
-
-fileDrop.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    fileInput.click();
+initFileDrop(fileDrop, fileInput, handleFile);
+initFileDrop(cutFileDrop, cutFileInput, async (file) => {
+  try {
+    await handleCutFile(file);
+  } catch (err) {
+    console.error(err);
+    alert(`파일 처리 중 오류: ${err.message}`);
+  } finally {
+    if (cutFileInput) cutFileInput.value = '';
   }
 });
 
-fileDrop.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  fileDrop.classList.add('dragover');
+for (const tab of modeTabs) {
+  tab.addEventListener('click', () => setMode(tab.dataset.mode || 'edit'));
+}
+
+window.addEventListener('hashchange', () => {
+  setMode(modeFromHash(), { updateUrl: false });
 });
 
-fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
-
-fileDrop.addEventListener('drop', (e) => {
-  e.preventDefault();
-  fileDrop.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file) handleFile(file);
-});
+setMode(modeFromHash(), { replace: true });
+resetCutWorkspace();
 
 $('btn-download').addEventListener('click', downloadResult);
 $('btn-style-export').addEventListener('click', exportStyleSettingsJson);
 $('btn-style-import').addEventListener('click', () => styleJsonInput.click());
 $('btn-speaker-export').addEventListener('click', exportSpeakerSettingsJson);
 $('btn-speaker-import').addEventListener('click', () => speakerJsonInput.click());
+btnCutApply?.addEventListener('click', applyCutRange);
+btnCutDownload?.addEventListener('click', downloadCutResult);
+
+for (const el of [cutStartLineInput, cutEndLineInput]) {
+  el?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      applyCutRange();
+    }
+  });
+}
 
 styleJsonInput.addEventListener('change', async (e) => {
   const file = e.target.files?.[0];

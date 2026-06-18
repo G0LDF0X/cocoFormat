@@ -15,212 +15,317 @@
     </header>
 
     <main class="main">
-      <section class="card" id="step-upload">
-        <h2>HTML 업로드</h2>
-        <div class="file-drop" id="file-drop" role="button" tabindex="0">
-          <input
-            type="file"
-            id="file-input"
-            accept=".html,.htm,text/html"
-            hidden
-          />
-          <span class="file-drop-text"
-            >ccfolia 로그 HTML을 여기에 드래그하거나 클릭하여 선택</span
-          >
-        </div>
-        <p class="file-info" id="file-info" hidden></p>
-      </section>
+      <nav class="mode-tabs" aria-label="작업 모드">
+        <button
+          type="button"
+          class="mode-tab"
+          id="mode-tab-cut"
+          data-mode="cut"
+          role="tab"
+          aria-controls="mode-cut"
+          aria-selected="false"
+        >
+          로그 자르기
+        </button>
+        <button
+          type="button"
+          class="mode-tab is-active"
+          id="mode-tab-edit"
+          data-mode="edit"
+          role="tab"
+          aria-controls="mode-edit"
+          aria-selected="true"
+        >
+          로그 편집하기
+        </button>
+      </nav>
 
-      <div id="workspace" class="workspace" hidden>
-        <section class="card preview-panel" id="step-preview">
-          <div class="preview-panel-head">
-            <h2>미리보기</h2>
-            <button type="button" class="btn btn-primary" id="btn-download">
-              HTML 다운로드
-            </button>
+      <section class="mode-panel" id="mode-cut" role="tabpanel" hidden>
+        <section class="card" id="cut-step-upload">
+          <h2>HTML 업로드</h2>
+          <div class="file-drop" id="cut-file-drop" role="button" tabindex="0">
+            <input
+              type="file"
+              id="cut-file-input"
+              accept=".html,.htm,text/html"
+              hidden
+            />
+            <span class="file-drop-text"
+              >자를 ccfolia 로그 HTML을 여기에 드래그하거나 클릭하여 선택</span
+            >
           </div>
-          <p class="hint">
-            본문 클릭으로 오탈자 수정. 프로필 클릭으로 해당 메시지의 이미지만
-            변경할 수 있습니다.
-          </p>
-          <p class="status" id="status"></p>
-          <div class="preview-wrap preview-wrap--large">
-            <iframe
-              id="preview-frame"
-              title="변환 결과 미리보기"
-              sandbox="allow-same-origin"
-            ></iframe>
-          </div>
+          <p class="file-info" id="cut-file-info" hidden></p>
         </section>
 
-        <div class="settings-panel">
-          <section class="card" id="step-tabs">
-            <div class="card-title-row">
-              <h2>탭 · 글자 · 시스템</h2>
-              <div class="style-io-actions">
-                <button type="button" class="btn" id="btn-style-export">
-                  스타일 JSON 내보내기
-                </button>
-                <button type="button" class="btn" id="btn-style-import">
-                  스타일 JSON 불러오기
-                </button>
-                <input
-                  type="file"
-                  id="style-json-input"
-                  accept=".json,application/json"
-                  hidden
-                />
-              </div>
-            </div>
-            <label class="tab-divider-toggle">
-              <input type="checkbox" id="tab-divider-transparent" />
-              탭 칩 숨기기
-            </label>
-            <fieldset class="common-style-fieldset">
-              <legend>공통</legend>
-              <div class="grid-3">
-                <label>
-                  폰트 크기 (px)
-                  <input
-                    type="number"
-                    id="log-font-size"
-                    value="15"
-                    min="10"
-                    max="24"
-                    step="1"
-                  />
-                </label>
-                <label>
-                  줄 간격
-                  <input
-                    type="number"
-                    id="log-line-height"
-                    value="1.6"
-                    min="1"
-                    max="3"
-                    step="0.1"
-                  />
-                </label>
-                <label>
-                  메시지 여백 (px)
-                  <input
-                    type="number"
-                    id="log-message-padding"
-                    value="20"
-                    min="0"
-                    max="40"
-                    step="1"
-                  />
-                </label>
-                <label>
-                  이미지 크기 (px)
-                  <input
-                    type="number"
-                    id="log-avatar-size"
-                    value="40"
-                    min="24"
-                    max="96"
-                    step="1"
-                  />
-                </label>
-              </div>
-            </fieldset>
-            <div class="tab-settings">
-              <fieldset>
-                <legend>잡담 (other)</legend>
-                <label
-                  >탭 이름 <input type="text" id="tab-other-title" value="잡담"
-                /></label>
-                <label
-                  >배경색 <input type="color" id="tab-other-bg" value="#27262C"
-                /></label>
-                <label
-                  >글자색
-                  <input type="color" id="tab-other-text" value="#a1a1a1"
-                /></label>
-                <label
-                  >칩 색
-                  <input type="color" id="tab-other-label" value="#8e8c9a"
-                /></label>
-              </fieldset>
-              <fieldset>
-                <legend>메인 (main)</legend>
-                <label
-                  >탭 이름 <input type="text" id="tab-main-title" value="메인"
-                /></label>
-                <label
-                  >배경색 <input type="color" id="tab-main-bg" value="#1f1e22"
-                /></label>
-                <label
-                  >글자색
-                  <input type="color" id="tab-main-text" value="#ffffff"
-                /></label>
-                <label
-                  >칩 색
-                  <input type="color" id="tab-main-label" value="#b0aebc"
-                /></label>
-              </fieldset>
-              <fieldset class="system-fieldset">
-                <legend>시스템 메시지</legend>
-                <label
-                  >칩 표기 <input type="text" id="system-label" value="system"
-                /></label>
-                <label
-                  >배경색 <input type="color" id="system-bg" value="#1f1e22"
-                /></label>
-                <label
-                  >글자색 <input type="color" id="system-text" value="#8a8898"
-                /></label>
-                <label
-                  >칩 색 <input type="color" id="system-border" value="#5a5870"
-                /></label>
-              </fieldset>
-            </div>
-
-            <div
-              id="custom-tabs-container"
-              class="custom-tabs-container"
-              hidden
-            ></div>
-          </section>
-
-          <section class="card" id="step-speakers">
-            <div class="card-title-row">
-              <h2>화자 설정</h2>
-              <div class="style-io-actions">
-                <button type="button" class="btn" id="btn-speaker-export">
-                  화자 JSON 내보내기
-                </button>
-                <button type="button" class="btn" id="btn-speaker-import">
-                  화자 JSON 불러오기
-                </button>
-                <input
-                  type="file"
-                  id="speaker-json-input"
-                  accept=".json,application/json"
-                  hidden
-                />
-              </div>
+        <div class="workspace workspace--cut" id="cut-workspace" hidden>
+          <section class="card preview-panel cut-source-panel">
+            <div class="preview-panel-head">
+              <h2>원본 메시지 미리보기</h2>
             </div>
             <p class="hint">
-              동일 이름은 한 인물로 취합됩니다. 나레이터는 중앙 정렬.
+              왼쪽 번호가 실제 메시지 번호입니다. 범위를 입력해 원하는 구간만
+              추출하세요.
             </p>
-            <div class="table-wrap">
-              <table class="speaker-table" id="speaker-table">
-                <thead>
-                  <tr>
-                    <th>프로필 · 원본</th>
-                    <th>표시 이름</th>
-                    <th>색상</th>
-                    <th>나레이터</th>
-                  </tr>
-                </thead>
-                <tbody id="speaker-tbody"></tbody>
-              </table>
+            <div class="line-preview" id="cut-source-preview"></div>
+          </section>
+
+          <section class="card settings-panel cut-result-panel">
+            <div class="cut-range-controls">
+              <label>
+                시작 메시지 번호
+                <input
+                  type="number"
+                  id="cut-start-line"
+                  min="1"
+                  step="1"
+                  placeholder="예: 1000"
+                />
+              </label>
+              <label>
+                종료 메시지 번호
+                <input
+                  type="number"
+                  id="cut-end-line"
+                  min="1"
+                  step="1"
+                  placeholder="예: 3000"
+                />
+              </label>
+              <button type="button" class="btn btn-primary" id="btn-cut-apply">
+                메시지 추출
+              </button>
+              <button type="button" class="btn" id="btn-cut-download" disabled>
+                추출 HTML 다운로드
+              </button>
+            </div>
+            <p class="status" id="cut-status"></p>
+            <div class="cut-result-preview-wrap">
+              <h3>추출 메시지 미리보기</h3>
+              <div
+                class="line-preview line-preview--result"
+                id="cut-result-preview"
+              ></div>
             </div>
           </section>
         </div>
-      </div>
+      </section>
+
+      <section class="mode-panel" id="mode-edit" role="tabpanel">
+        <section class="card" id="step-upload">
+          <h2>HTML 업로드</h2>
+          <div class="file-drop" id="file-drop" role="button" tabindex="0">
+            <input
+              type="file"
+              id="file-input"
+              accept=".html,.htm,text/html"
+              hidden
+            />
+            <span class="file-drop-text"
+              >편집할 ccfolia 로그 HTML을 여기에 드래그하거나 클릭하여
+              선택</span
+            >
+          </div>
+          <p class="file-info" id="file-info" hidden></p>
+        </section>
+
+        <div id="workspace" class="workspace" hidden>
+          <section class="card preview-panel" id="step-preview">
+            <div class="preview-panel-head">
+              <h2>미리보기</h2>
+              <button type="button" class="btn btn-primary" id="btn-download">
+                HTML 다운로드
+              </button>
+            </div>
+            <p class="hint">
+              본문 클릭으로 오탈자 수정. 프로필 클릭으로 해당 메시지의 이미지만
+              변경할 수 있습니다.
+            </p>
+            <p class="status" id="status"></p>
+            <div class="preview-wrap preview-wrap--large">
+              <iframe
+                id="preview-frame"
+                title="변환 결과 미리보기"
+                sandbox="allow-same-origin"
+              ></iframe>
+            </div>
+          </section>
+
+          <div class="settings-panel">
+            <section class="card" id="step-tabs">
+              <div class="card-title-row">
+                <h2>탭 · 글자 · 시스템</h2>
+                <div class="style-io-actions">
+                  <button type="button" class="btn" id="btn-style-export">
+                    스타일 JSON 내보내기
+                  </button>
+                  <button type="button" class="btn" id="btn-style-import">
+                    스타일 JSON 불러오기
+                  </button>
+                  <input
+                    type="file"
+                    id="style-json-input"
+                    accept=".json,application/json"
+                    hidden
+                  />
+                </div>
+              </div>
+              <label class="tab-divider-toggle">
+                <input type="checkbox" id="tab-divider-transparent" />
+                탭 칩 숨기기
+              </label>
+              <fieldset class="common-style-fieldset">
+                <legend>공통</legend>
+                <div class="grid-3">
+                  <label>
+                    폰트 크기 (px)
+                    <input
+                      type="number"
+                      id="log-font-size"
+                      value="15"
+                      min="10"
+                      max="24"
+                      step="1"
+                    />
+                  </label>
+                  <label>
+                    줄 간격
+                    <input
+                      type="number"
+                      id="log-line-height"
+                      value="1.6"
+                      min="1"
+                      max="3"
+                      step="0.1"
+                    />
+                  </label>
+                  <label>
+                    메시지 여백 (px)
+                    <input
+                      type="number"
+                      id="log-message-padding"
+                      value="20"
+                      min="0"
+                      max="40"
+                      step="1"
+                    />
+                  </label>
+                  <label>
+                    이미지 크기 (px)
+                    <input
+                      type="number"
+                      id="log-avatar-size"
+                      value="40"
+                      min="24"
+                      max="96"
+                      step="1"
+                    />
+                  </label>
+                </div>
+              </fieldset>
+              <div class="tab-settings">
+                <fieldset>
+                  <legend>잡담 (other)</legend>
+                  <label
+                    >탭 이름
+                    <input type="text" id="tab-other-title" value="잡담"
+                  /></label>
+                  <label
+                    >배경색
+                    <input type="color" id="tab-other-bg" value="#27262C"
+                  /></label>
+                  <label
+                    >글자색
+                    <input type="color" id="tab-other-text" value="#a1a1a1"
+                  /></label>
+                  <label
+                    >칩 색
+                    <input type="color" id="tab-other-label" value="#8e8c9a"
+                  /></label>
+                </fieldset>
+                <fieldset>
+                  <legend>메인 (main)</legend>
+                  <label
+                    >탭 이름
+                    <input type="text" id="tab-main-title" value="메인"
+                  /></label>
+                  <label
+                    >배경색
+                    <input type="color" id="tab-main-bg" value="#1f1e22"
+                  /></label>
+                  <label
+                    >글자색
+                    <input type="color" id="tab-main-text" value="#ffffff"
+                  /></label>
+                  <label
+                    >칩 색
+                    <input type="color" id="tab-main-label" value="#b0aebc"
+                  /></label>
+                </fieldset>
+                <fieldset class="system-fieldset">
+                  <legend>시스템 메시지</legend>
+                  <label
+                    >칩 표기
+                    <input type="text" id="system-label" value="system"
+                  /></label>
+                  <label
+                    >배경색 <input type="color" id="system-bg" value="#1f1e22"
+                  /></label>
+                  <label
+                    >글자색
+                    <input type="color" id="system-text" value="#8a8898"
+                  /></label>
+                  <label
+                    >칩 색
+                    <input type="color" id="system-border" value="#5a5870"
+                  /></label>
+                </fieldset>
+              </div>
+
+              <div
+                id="custom-tabs-container"
+                class="custom-tabs-container"
+                hidden
+              ></div>
+            </section>
+
+            <section class="card" id="step-speakers">
+              <div class="card-title-row">
+                <h2>화자 설정</h2>
+                <div class="style-io-actions">
+                  <button type="button" class="btn" id="btn-speaker-export">
+                    화자 JSON 내보내기
+                  </button>
+                  <button type="button" class="btn" id="btn-speaker-import">
+                    화자 JSON 불러오기
+                  </button>
+                  <input
+                    type="file"
+                    id="speaker-json-input"
+                    accept=".json,application/json"
+                    hidden
+                  />
+                </div>
+              </div>
+              <p class="hint">
+                동일 이름은 한 인물로 취합됩니다. 나레이터는 중앙 정렬.
+              </p>
+              <div class="table-wrap">
+                <table class="speaker-table" id="speaker-table">
+                  <thead>
+                    <tr>
+                      <th>프로필 · 원본</th>
+                      <th>표시 이름</th>
+                      <th>색상</th>
+                      <th>나레이터</th>
+                    </tr>
+                  </thead>
+                  <tbody id="speaker-tbody"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
     </main>
 
     <dialog class="image-dialog" id="image-dialog">
